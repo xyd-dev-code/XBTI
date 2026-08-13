@@ -5,13 +5,14 @@
   const CFG = window.XBTI_CONFIG || {};
   const SUBMIT = window.XBTI_SUBMIT;
 
-  const state = { idx: 0, answers: new Array(D.questions.length).fill(null) };
+  const state = { idx: 0, answers: new Array(D.questions.length).fill(null), info: null };
+  const infoState = { no: "", stayupLv: 0 };
 
   /* ---------- 工具 ---------- */
   const $ = (s, r = document) => r.querySelector(s);
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   function show(view) {
-    ["start", "quiz", "result"].forEach(v => $("#view-" + v).classList.toggle("hidden", v !== view));
+    ["start", "info", "quiz", "result"].forEach(v => $("#view-" + v).classList.toggle("hidden", v !== view));
     window.scrollTo(0, 0);
   }
   function randId() {
@@ -78,16 +79,63 @@
     </svg>`;
   }
 
+  /* ---------- 考生信息卡（考前填表） ---------- */
+  function renderInfo() {
+    infoState.no = randId();
+    infoState.stayupLv = 0;
+    $("#info-no").textContent = infoState.no;
+    $("#info-code").value = "";
+    $("#info-stayup").value = "0";
+    $("#info-stayup-val").textContent = "0h · 修仙 Lv.0";
+    $("#info-agree").checked = true;
+
+    const range = $("#info-stayup");
+    range.oninput = () => {
+      const h = +range.value;
+      const lv = h === 0 ? 0 : Math.ceil(h / 8);
+      infoState.stayupLv = lv;
+      $("#info-stayup-val").textContent = h + "h · 修仙 Lv." + lv;
+    };
+  }
+
   /* ---------- 渲染报告 ---------- */
   function renderReport() {
     const scores = score();
     const { type, matchRate } = matchType(scores);
-    const id = randId();
+    const id = (state.info && state.info.no) || randId();
     const date = new Date().toLocaleDateString("zh-CN");
     const perscription = buildPrescription(type);
+    const raw = state.info || {};
+    const info = {
+      code: raw.code || "匿名考生",
+      no: raw.no || id,
+      hp: raw.hp || "—",
+      loc: raw.loc || "—",
+      sign: raw.sign || "—",
+      stayup: (raw.stayup != null ? raw.stayup : 0) + "h",
+      agree: raw.agree ? "已签承诺书" : "拒签"
+    };
+
+    const ticketHtml = `
+      <div class="ticket">
+        <div class="ticket-main">
+          <div class="ticket-tag">你的专属准考证</div>
+          <div class="ticket-code">${info.code}</div>
+          <div class="ticket-no">准考证号 ${info.no}</div>
+        </div>
+        <div class="ticket-fields">
+          <div class="ticket-field"><span>报考科目</span><b>精神状态鉴定</b></div>
+          <div class="ticket-field"><span>今日血量</span><b>${info.hp}</b></div>
+          <div class="ticket-field"><span>当前坐标</span><b>${info.loc}</b></div>
+          <div class="ticket-field"><span>赛博星座</span><b>${info.sign}</b></div>
+          <div class="ticket-field"><span>连续熬夜</span><b>${info.stayup}</b></div>
+          <div class="ticket-field"><span>考生状态</span><b>${info.agree}</b></div>
+        </div>
+      </div>`;
 
     const html = `
       <div class="cert">
+        ${ticketHtml}
         <div class="cert-head">
           <div class="cert-org">📋 XBTI 国家精神状态鉴定中心（虚构）</div>
           <div class="cert-sub">经 ISO 23333 抽象质量管理体系认证（该体系并不存在）</div>
@@ -155,12 +203,14 @@
         result_type: type.code,
         result_name: type.name,
         match_rate: matchRate,
+        info: state.info,
         meta: { ua: navigator.userAgent }
       });
     }
   }
 
   function buildPrescription(type) {
+    if (D.rxPresets && D.rxPresets[type.name]) return D.rxPresets[type.name];
     return `1. 每日摸鱼不超过 6 小时（留点力气给真正想做的事）。<br>
             2. 发疯前先深呼吸，数到三，然后该疯疯（建议去公园）。<br>
             3. 23:30 前把手机拴在床尾，与「${type.name}」的本能和解。`;
@@ -178,6 +228,7 @@
   function saveRadar() {
     const svg = $("#radar svg");
     if (!svg) return;
+    const name = (type && type.name) || "xbti";
     const xml = new XMLSerializer().serializeToString(svg);
     const img = new Image();
     img.onload = () => {
@@ -185,7 +236,7 @@
       const ctx = c.getContext("2d"); ctx.drawImage(img, 0, 0, 640, 640);
       c.toBlob(b => {
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(b); a.download = "xbti-radar.png"; a.click();
+        a.href = URL.createObjectURL(b); a.download = name + "-雷达图.png"; a.click();
         toast("雷达图已保存 ✓");
       });
     };
@@ -225,7 +276,22 @@
   }
 
   function bind() {
-    $("#btn-start").onclick = () => { state.idx = 0; show("quiz"); renderQuestion(); };
+    $("#btn-start").onclick = () => { state.idx = 0; state.answers.fill(null); show("info"); renderInfo(); };
+    $("#btn-enter").onclick = () => {
+      const code = ($("#info-code").value || "").trim() || "匿名考生";
+      state.info = {
+        no: infoState.no,
+        code,
+        subject: "精神状态鉴定（XBTI）",
+        hp: $("#info-hp").value,
+        loc: $("#info-loc").value,
+        stayup: +$("#info-stayup").value,
+        stayup_lv: infoState.stayupLv,
+        sign: $("#info-sign").value,
+        agree: $("#info-agree").checked
+      };
+      show("quiz"); renderQuestion();
+    };
     $("#btn-back").onclick = () => { if (state.idx > 0) { state.idx--; renderQuestion(); } };
     $("#btn-next").onclick = () => {
       if (!state.answers[state.idx]) return;
