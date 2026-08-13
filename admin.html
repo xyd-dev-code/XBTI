@@ -413,54 +413,36 @@
 
     /* ---------- 保存报告图片 ---------- */
     function saveReportImage(name, scores, matchRate, recordId, codeName) {
-      const W = 720, H = 920;
-      const c = document.createElement("canvas"); c.width = W; c.height = H;
-      const ctx = c.getContext("2d");
+      const types = D.types || [];
+      const type = types.find(t => t.name === name) || types.find(t => t.code === name) || {};
+      if (!type.name) { toast("未找到对应人格数据，无法生成完整报告"); return; }
 
-      /* 背景 */
-      ctx.fillStyle = "#fffdf8"; ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = "#2b2620"; ctx.fillRect(0, 0, W, 80);
+      const rateNum = parseInt(String(matchRate).replace(/[^0-9]/g, ""), 10) || 0;
+      const svgStr = buildReportSVG(type, rateNum, scores);
+      const xml = new XMLSerializer().serializeToString(parseSVG(svgStr));
+      const svgBytes = unescape(encodeURIComponent(xml));
+      const src = "data:image/svg+xml;base64," + btoa(svgBytes);
 
-      /* 标题区 */
-      ctx.fillStyle = "#fff"; ctx.font = "700 26px sans-serif";
-      ctx.fillText("XBTI 精神状态鉴定报告", 30, 48);
-      ctx.font = "13px sans-serif"; ctx.fillStyle = "rgba(255,255,255,.65)";
-      ctx.fillText("报告编号：" + recordId + " ｜ 考生：" + codeName, 30, 70);
-
-      /* 卡片：人格 + 匹配度 */
-      roundRect(ctx, 24, 100, W - 48, 90, 14, "#fff", "#e3ddd0");
-      ctx.fillStyle = "#d9480f"; ctx.font = "700 32px sans-serif";
-      ctx.fillText(name, 44, 148);
-      ctx.fillStyle = "#6b6354"; ctx.font = "14px sans-serif";
-      ctx.fillText("匹配度：" + matchRate, 44, 176);
-
-      /* 雷达图区域标题 */
-      ctx.fillStyle = "#2b2620"; ctx.font = "600 15px sans-serif";
-      ctx.fillText("六维精神状态坐标", 30, 220);
-
-      /* 绘制雷达图到 canvas（复用 SVG 逻辑） */
-      const svgStr = radarSVG(scores);
-      if (svgStr) {
-        const xml = new XMLSerializer().serializeToString(parseSVG(svgStr));
-        const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, (W - 400) / 2, 236, 400, 400);
-
-          /* 底部信息 */
-          ctx.fillStyle = "#6b6354"; ctx.font = "12px sans-serif";
-          ctx.fillText("生成时间：" + new Date().toLocaleString("zh-CN"), 30, H - 24);
-          ctx.fillText("XBTI 国家精神状态鉴定中心（虚构）", W - 290, H - 24);
-
-          c.toBlob(b => {
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(b);
-            a.download = name + "-报告.png";
-            a.click();
-            toast("已保存：" + name + "-报告.png");
-          }, "image/png");
-        };
-        img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
-      }
+      const img = new Image();
+      img.onload = () => {
+        const W = img.width || 720;
+        const H = img.height || 920;
+        const c = document.createElement("canvas");
+        c.width = W; c.height = H;
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#fffdf8";
+        ctx.fillRect(0, 0, W, H);
+        ctx.drawImage(img, 0, 0);
+        c.toBlob(b => {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(b);
+          a.download = name + "-诊断书.png";
+          a.click();
+          toast("已保存：" + name + "-诊断书.png");
+        }, "image/png");
+      };
+      img.onerror = () => toast("报告生成失败，请重试");
+      img.src = src;
     }
 
     function parseSVG(str) {
@@ -477,6 +459,45 @@
       ctx.closePath();
       if (fill) { ctx.fillStyle = fill; ctx.fill(); }
       if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
+    }
+
+    /* ---------- 完整检测报告 SVG（与前台 app.js 保持一致） ---------- */
+    function buildPrescription(type) {
+      if (D.rxPresets && D.rxPresets[type.name]) return D.rxPresets[type.name];
+      return `1. 每日摸鱼不超过 6 小时（留点力气给真正想做的事）。
+            2. 发疯前先深呼吸，数到三，然后该疯疯（建议去公园）。
+            3. 23:30 前把手机拴在床尾，与「${type.name}」的本能和解。`;
+    }
+
+    function buildReportSVG(type, matchRate, scores) {
+      const W = 720, PAD = 40;
+      const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const wrap = (t, max) => { t = String(t); const out = []; for (let i = 0; i < t.length; i += max) out.push(t.slice(i, i + max)); return out; };
+      const label = (txt, y, color) => `<text x="${PAD}" y="${y}" font-size="16" font-weight="700" fill="${color}" font-family="sans-serif">${esc(txt)}</text>`;
+      const line = (txt, y, size, color) => `<text x="${PAD}" y="${y}" font-size="${size}" fill="${color}" font-family="sans-serif">${esc(txt)}</text>`;
+      let y = 60, body = "";
+      body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="23" font-weight="700" fill="#d9480f" font-family="sans-serif">XBTI 国家精神状态鉴定中心</text>`; y += 26;
+      body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="12" fill="#6b6354" font-family="sans-serif">经 ISO 23333 抽象质量管理体系认证</text>`; y += 22;
+      body += `<line x1="${PAD}" y1="${y}" x2="${W - PAD}" y2="${y}" stroke="#e3ddd0" stroke-width="1"/>`; y += 32;
+      body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="14" fill="#6b6354" font-family="sans-serif">你被确诊为</text>`; y += 40;
+      body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="36" font-weight="800" fill="#2b2620" font-family="sans-serif">${esc(type.name)}</text>`; y += 30;
+      body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="15" fill="#d9480f" font-family="sans-serif">${esc(type.code)} · 匹配度 ${matchRate}%</text>`; y += 24;
+      const radarS = 300, radarX = (W - radarS) / 2, radarY = y;
+      body += `<svg x="${radarX}" y="${radarY}" width="${radarS}" height="${radarS}" viewBox="0 0 320 320">${radarSVG(scores)}</svg>`;
+      y += radarS + 16;
+      body += label("学术解读（伪）", y, "#b23b2e"); y += 26;
+      wrap(type.academic, 40).forEach(l => { body += line(l, y, 15, "#2b2620"); y += 24; }); y += 10;
+      body += label("隐藏槽点", y, "#b23b2e"); y += 26;
+      wrap(type.flaw, 40).forEach(l => { body += line(l, y, 15, "#2b2620"); y += 24; }); y += 10;
+      body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="18" font-weight="700" fill="#b23b2e" font-family="sans-serif">「 ${esc(type.verdict)} 」</text>`; y += 28;
+      body += label("处 方 笺", y, "#b23b2e"); y += 24;
+      body += line("诊断：当代青年标准精神损耗（" + esc(type.name) + "型）", y, 14, "#6b6354"); y += 22;
+      wrap(buildPrescription(type).replace(/<br>\s*/g, " "), 42).forEach(l => { body += line(l, y, 14, "#2b2620"); y += 22; }); y += 8;
+      const disclaimer = (D.meta && D.meta.disclaimer) || "娱乐测试，非心理诊断。结果仅供自嘲，不作就医、入职、相亲依据。";
+      wrap(disclaimer, 44).forEach(l => { body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="11" fill="#9a9384" font-family="sans-serif">${esc(l)}</text>`; y += 16; });
+      const H = y + 28;
+      const bg = `<rect x="0" y="0" width="${W}" height="${H}" fill="#fffdf8"/><rect x="12" y="12" width="${W - 24}" height="${H - 24}" fill="none" stroke="#e3ddd0" stroke-width="1.5" rx="14"/>`;
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${bg}${body}</svg>`;
     }
 
     /* ---------- 答题详情弹窗 ---------- */
@@ -515,14 +536,14 @@
     function renderAnswerItems(ans, qs) {
       return ans.map((a, i) => {
         const q = qs[i] || {};
-        const qText = escHtml(q.text || ("第 " + (i + 1) + " 题"));
+        const qText = escHtml(q.q || ("第 " + (i + 1) + " 题"));
         const opts = Array.isArray(q.options) ? q.options : [];
         let optsHtml = "";
         if (opts.length) {
           optsHtml = `<div class="ans-opts">${opts.map((o, j) => {
             const letter = String.fromCharCode(65 + j);
-            const picked = (a === o.text || a === letter || a === (j + 1));
-            return `<span class="ans-opt${picked ? " picked" : ""}">${letter}. ${escHtml(o.text)}</span>`;
+            const picked = (a === o.t || a === o.k || a === letter || a === (j + 1));
+            return `<span class="ans-opt${picked ? " picked" : ""}">${letter}. ${escHtml(o.t)}</span>`;
           }).join("")}</div>`;
         } else {
           optsHtml = `<div class="ans-opts"><span class="ans-opt picked">${escHtml(String(a))}</span></div>`;
