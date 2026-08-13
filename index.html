@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>XBTI 精神状态鉴定 · 当代年轻人精神状态，一测便知（但不准）</title>
+  <meta name="description" content="XBTI 搞怪版人格测试：30 道抽象题，27 种奇葩人格，一份适合截图发朋友圈的精神状态诊断书。" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="paper">
+  <div class="wrap">
+
+    <!-- 开始页 -->
+    <section id="view-start" class="hero">
+      <div class="zh">X B T I</div>
+      <h1>精神状态鉴定</h1>
+      <p class="slogan" id="slogan">当代年轻人精神状态，一测便知（但不准）。</p>
+      <button class="btn block" id="btn-start">开始测试 →</button>
+      <p class="disclaimer">娱乐测试，非心理诊断。结果仅供自嘲，不作就医、入职、相亲依据（尤其不能作相亲依据）。</p>
+    </section>
+
+    <!-- 答题页 -->
+    <section id="view-quiz" class="hidden">
+      <div class="progress">
+        <div class="bar"><i id="progress-bar"></i></div>
+        <div class="txt" id="progress-text"></div>
+      </div>
+      <div><span class="q-theme" id="q-theme"></span></div>
+      <div class="q-text" id="q-text"></div>
+      <div id="options"></div>
+      <div class="nav">
+        <button class="btn ghost" id="btn-back">← 上一题</button>
+        <button class="btn" id="btn-next" disabled>下一题 →</button>
+      </div>
+    </section>
+
+    <!-- 报告页 -->
+    <section id="view-result" class="hidden">
+      <div id="report"></div>
+    </section>
+
+  </div>
+
+  <!-- 数据层 → 配置 → 上报 → 主逻辑 -->
+  <script src="assets/js/data.js"></script>
+  <script>document.getElementById("slogan").textContent = (window.XBTI_DATA && window.XBTI_DATA.meta.slogan) || "当代年轻人精神状态，一测便知（但不准）。";</script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/submit.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

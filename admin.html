@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>XBTI 管理后台 · 答题记录</title>
+  <style>
+    body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; background: #f4efe4; color: #2b2620; }
+    .bar { padding: 14px 18px; background: #2b2620; color: #fff; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .bar input { padding: 8px 12px; border-radius: 8px; border: none; min-width: 220px; }
+    .bar button { padding: 8px 14px; border: none; border-radius: 8px; background: #d9480f; color: #fff; cursor: pointer; }
+    .wrap { max-width: 1100px; margin: 18px auto; padding: 0 14px; }
+    .stat { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+    .stat div { background: #fffdf8; border: 1px solid #e3ddd0; border-radius: 10px; padding: 10px 16px; }
+    .stat b { font-size: 22px; color: #d9480f; }
+    table { width: 100%; border-collapse: collapse; background: #fffdf8; font-size: 13px; }
+    th, td { border: 1px solid #e3ddd0; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f0e9da; position: sticky; top: 0; }
+    .type-tag { display: inline-block; background: #d9480f; color: #fff; border-radius: 6px; padding: 1px 8px; font-size: 12px; }
+    details { cursor: pointer; }
+    details summary { color: #2b6cb0; }
+    .empty { text-align: center; color: #6b6354; padding: 40px; }
+    .filter { margin-bottom: 10px; }
+    .filter select, .filter input { padding: 7px 10px; border-radius: 8px; border: 1px solid #e3ddd0; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <strong>XBTI 管理后台</strong>
+    <input id="token" type="password" placeholder="输入管理员令牌（不保存、不记录）" />
+    <button id="load">拉取答题记录</button>
+    <button id="export">导出 CSV</button>
+    <span id="msg" style="font-size:12px;opacity:.8"></span>
+  </div>
+
+  <div class="wrap">
+    <div class="stat" id="stat"></div>
+    <div class="filter">
+      人格筛选：
+      <select id="f-type"><option value="">全部</option></select>
+    </div>
+    <div id="table"></div>
+  </div>
+
+  <script>
+    // 管理页：令牌仅由管理员在运行时输入，绝不写死在前端源码。
+    // 数据来自同域无服务器函数 /api/admin?token=...（需后端校验令牌）。
+    const API = "/api/admin";
+    const $ = s => document.querySelector(s);
+
+    function render(records) {
+      const types = new Set();
+      records.forEach(r => types.add(r.result_name || r.result_type || "?"));
+      const sel = $("#f-type");
+      types.forEach(t => { const o = document.createElement("option"); o.value = t; o.textContent = t; sel.appendChild(o); });
+
+      const stats = {};
+      records.forEach(r => { const k = r.result_name || r.result_type || "?"; stats[k] = (stats[k] || 0) + 1; });
+      $("#stat").innerHTML = `<div>总记录 <b>${records.length}</b></div>` +
+        Object.entries(stats).sort((a,b)=>b[1]-a[1]).slice(0,6)
+          .map(([k,v]) => `<div>${k} <b>${v}</b></div>`).join("");
+
+      draw(records);
+      sel.onchange = () => {
+        const v = sel.value;
+        draw(v ? records.filter(r => (r.result_name||r.result_type) === v) : records);
+      };
+    }
+
+    function draw(rows) {
+      if (!rows.length) { $("#table").innerHTML = '<div class="empty">暂无记录</div>'; return; }
+      const head = `<tr><th>编号/时间</th><th>人格</th><th>匹配度</th><th>六维</th><th>答题答案</th></tr>`;
+      const body = rows.map(r => {
+        const t = new Date(r.created_at || Date.now()).toLocaleString("zh-CN");
+        const scores = r.scores ? Object.entries(r.scores).map(([k,v])=>`${k}:${v}`).join(" ") : "-";
+        const ans = Array.isArray(r.answers) ? r.answers.map((a,i)=>`Q${i+1}:${a}`).join(" ") : "-";
+        return `<tr>
+          <td>${r.record_id || "-"}<br><small>${t}</small></td>
+          <td><span class="type-tag">${(r.result_name||"-")} ${r.result_type||""}</span></td>
+          <td>${r.match_rate != null ? r.match_rate + "%" : "-"}</td>
+          <td>${scores}</td>
+          <td><details><summary>展开</summary>${ans}</details></td>
+        </tr>`;
+      }).join("");
+      $("#table").innerHTML = `<table>${head}${body}</table>`;
+    }
+
+    async function load() {
+      const token = $("#token").value.trim();
+      if (!token) { $("#msg").textContent = "请先输入管理员令牌"; return; }
+      $("#msg").textContent = "加载中…";
+      try {
+        const res = await fetch(API + "?token=" + encodeURIComponent(token));
+        if (res.status === 403) { $("#msg").textContent = "令牌错误或无权限"; return; }
+        const data = await res.json();
+        const records = Array.isArray(data) ? data : (data.results || []);
+        window.__records = records;
+        render(records);
+        $("#msg").textContent = "共 " + records.length + " 条";
+      } catch (e) { $("#msg").textContent = "请求失败：" + e.message; }
+    }
+
+    function exportCSV() {
+      const rows = window.__records || [];
+      if (!rows.length) { alert("没有可导出的数据"); return; }
+      const header = ["record_id","created_at","result_type","result_name","match_rate","scores","answers"];
+      const lines = [header.join(",")];
+      rows.forEach(r => {
+        const sc = r.scores ? JSON.stringify(r.scores).replace(/"/g,'""') : "";
+        const an = Array.isArray(r.answers) ? r.answers.join("") : "";
+        lines.push([r.record_id, r.created_at, r.result_type, r.result_name, r.match_rate, '"'+sc+'"', '"'+an+'"'].join(","));
+      });
+      const blob = new Blob(["\ufeff"+lines.join("\n")], { type: "text/csv" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "xbti-records.csv"; a.click();
+    }
+
+    $("#load").onclick = load;
+    $("#export").onclick = exportCSV;
+  </script>
+</body>
+</html>

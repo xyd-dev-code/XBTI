@@ -1,0 +1,111 @@
+/* XBTI 样式 —— 双主题：paper 诊断书米白 / cyber 赛博暗夜；移动端优先，桌面居中成"证书" */
+:root {
+  --bg: #f4efe4; --card: #fffdf8; --ink: #2b2620; --sub: #6b6354;
+  --line: #e3ddd0; --accent: #d9480f; --accent2: #2b6cb0; --seal: #b23b2e;
+}
+body.cyber {
+  --bg: #0e0f1a; --card: #161827; --ink: #e8ecf5; --sub: #9aa3bd;
+  --line: #2a2f45; --accent: #ff5a5f; --accent2: #4cc9f0; --seal: #ff5a5f;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  background: var(--bg); color: var(--ink); line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.hidden { display: none !important; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 28px 18px 60px; }
+
+/* 开始页 */
+.hero { text-align: center; padding: 40px 0 18px; }
+.hero h1 { font-size: 40px; letter-spacing: 2px; margin: 0 0 6px; }
+.hero .zh { font-size: 15px; color: var(--sub); letter-spacing: 6px; }
+.hero .slogan { margin: 22px auto 6px; font-size: 17px; color: var(--sub); max-width: 460px; }
+.disclaimer { font-size: 12px; color: var(--sub); margin-top: 14px; }
+
+/* 按钮 */
+.btn {
+  display: inline-block; border: none; cursor: pointer; font-size: 16px;
+  padding: 13px 26px; border-radius: 999px; background: var(--accent); color: #fff;
+  font-family: inherit; transition: transform .12s, opacity .12s;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); padding: 10px 16px; font-size: 14px; }
+.btn.retry { margin-top: 22px; background: transparent; color: var(--sub); border: 1px dashed var(--line); }
+.btn.block { width: 100%; margin-top: 26px; }
+
+/* 进度 */
+.progress { margin: 8px 0 22px; }
+.progress .bar { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.progress .bar i { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+.progress .txt { font-size: 12px; color: var(--sub); margin-top: 6px; }
+.q-theme { display: inline-block; font-size: 12px; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 2px 12px; }
+.q-text { font-size: 20px; font-weight: 600; margin: 14px 0 22px; }
+
+/* 选项 */
+.opt {
+  display: flex; gap: 14px; align-items: flex-start; width: 100%; text-align: left;
+  background: var(--card); border: 1.5px solid var(--line); border-radius: 14px;
+  padding: 16px 18px; margin-bottom: 14px; cursor: pointer; color: var(--ink);
+  font-family: inherit; font-size: 15px; transition: border-color .15s, transform .1s;
+}
+.opt:hover { border-color: var(--accent); }
+.opt.chosen { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
+.opt-k { flex: 0 0 26px; height: 26px; line-height: 26px; text-align: center; border-radius: 50%; background: var(--line); color: var(--ink); font-weight: 700; }
+.opt.chosen .opt-k { background: var(--accent); color: #fff; }
+.nav { display: flex; justify-content: space-between; margin-top: 10px; }
+.nav .btn { padding: 11px 22px; font-size: 15px; }
+
+/* 报告 / 诊断书 */
+.cert { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 26px 22px; box-shadow: 0 10px 40px rgba(0,0,0,.06); }
+.cert-head { text-align: center; border-bottom: 2px dashed var(--line); padding-bottom: 16px; }
+.cert-org { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+.cert-sub { font-size: 12px; color: var(--sub); margin-top: 4px; }
+.cert-meta { font-size: 11px; color: var(--sub); margin-top: 8px; font-family: ui-monospace, monospace; }
+.main-type { text-align: center; margin: 22px 0; }
+.mt-label { font-size: 13px; color: var(--sub); }
+.mt-name { font-size: 34px; font-weight: 800; margin: 6px 0; }
+.mt-code { font-size: 16px; color: var(--accent); margin-left: 8px; font-family: ui-monospace, monospace; }
+.mt-match { font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+.mt-match .bar { width: 180px; height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.mt-match .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.mt-match b { color: var(--accent); font-size: 18px; }
+.mt-note { font-size: 12px; color: var(--sub); margin-top: 4px; }
+.radar-wrap { width: 280px; max-width: 80%; margin: 18px auto; }
+
+.card { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 14px 0; }
+.card-title { font-size: 13px; color: var(--accent); font-weight: 700; margin-bottom: 6px; letter-spacing: 1px; }
+.card p { margin: 0; font-size: 14px; }
+.card.flaw .card-title { color: var(--seal); }
+
+.verdict { text-align: center; margin: 20px 0; position: relative; }
+.verdict p { font-size: 22px; font-weight: 700; margin: 8px 0 0; }
+.verdict .seal {
+  position: absolute; right: 6px; top: -6px; width: 44px; height: 44px; line-height: 44px;
+  border: 2px solid var(--seal); color: var(--seal); border-radius: 8px; font-size: 22px;
+  transform: rotate(-12deg); opacity: .85; font-family: "KaiTi", serif;
+}
+.prescription { background: color-mix(in srgb, var(--accent) 6%, var(--card)); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 16px 0; }
+.rx-title { text-align: center; font-weight: 700; letter-spacing: 8px; color: var(--accent); }
+.rx-line { font-size: 13px; margin: 8px 0; }
+.rx-body { font-size: 14px; }
+.rx-foot { font-size: 11px; color: var(--sub); margin-top: 10px; font-family: ui-monospace, monospace; }
+
+.share-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
+.share-row .btn.ghost { flex: 1 1 auto; min-width: 120px; }
+
+/* toast */
+.toast {
+  position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px;
+  font-size: 14px; opacity: 0; pointer-events: none; transition: all .25s; z-index: 99;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 480px) {
+  .hero h1 { font-size: 32px; }
+  .mt-name { font-size: 28px; }
+  .q-text { font-size: 18px; }
+}
