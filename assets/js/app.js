@@ -137,8 +137,8 @@
       <div class="cert">
         ${ticketHtml}
         <div class="cert-head">
-          <div class="cert-org">📋 XBTI 国家精神状态鉴定中心（虚构）</div>
-          <div class="cert-sub">经 ISO 23333 抽象质量管理体系认证（该体系并不存在）</div>
+          <div class="cert-org">📋 XBTI 国家精神状态鉴定中心</div>
+          <div class="cert-sub">经 ISO 23333 抽象质量管理体系认证</div>
           <div class="cert-meta">报告编号 ${id} ｜ 诊断日期 ${date} ｜ 主检医师：风 ｜ 复核：你的良心</div>
         </div>
 
@@ -178,7 +178,7 @@
         <div class="share-row">
           <button class="btn ghost" id="btn-copy-verdict">复制判词</button>
           <button class="btn ghost" id="btn-copy-text">复制诊断文案</button>
-          <button class="btn ghost" id="btn-save-img">保存雷达图</button>
+          <button class="btn ghost" id="btn-save-img">保存报告</button>
         </div>
         <div class="disclaimer">${D.meta.disclaimer}</div>
         <button class="btn retry" id="btn-retry">再测一次（结果可能不一样，真的）</button>
@@ -190,7 +190,7 @@
     // 分享按钮
     $("#btn-copy-verdict").onclick = () => copyText(type.verdict);
     $("#btn-copy-text").onclick = () => copyText(buildShareText(type, matchRate, id, scores));
-    $("#btn-save-img").onclick = () => saveRadar();
+    $("#btn-save-img").onclick = () => saveReport();
     $("#btn-retry").onclick = () => { state.idx = 0; state.answers.fill(null); show("start"); };
 
     // 上报（不阻塞界面）
@@ -225,10 +225,30 @@
       navigator.clipboard.writeText(t).then(() => toast("已复制 ✓"), () => toast("复制失败，请手动选择"));
     } else { toast("当前环境不支持自动复制"); }
   }
-  function saveRadar() {
+  function saveReport() {
+    const cert = document.querySelector("#report .cert");
+    if (!cert) return;
+    const name = (type && type.name) || "xbti";
+    if (window.html2canvas) {
+      toast("正在生成报告图片…");
+      html2canvas(cert, {
+        backgroundColor: "#fffdf8",
+        scale: 2,
+        ignoreElements: (el) => el.id === "btn-retry" || (el.classList && el.classList.contains("share-row"))
+      }).then(canvas => {
+        canvas.toBlob(b => {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(b); a.download = name + "-诊断书.png"; a.click();
+          toast("报告已保存 ✓");
+        });
+      }).catch(() => fallbackRadar(name));
+      return;
+    }
+    fallbackRadar(name);
+  }
+  function fallbackRadar(name) {
     const svg = $("#radar svg");
     if (!svg) return;
-    const name = (type && type.name) || "xbti";
     const xml = new XMLSerializer().serializeToString(svg);
     const img = new Image();
     img.onload = () => {
@@ -237,7 +257,7 @@
       c.toBlob(b => {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(b); a.download = name + "-雷达图.png"; a.click();
-        toast("雷达图已保存 ✓");
+        toast("已保存雷达图 ✓");
       });
     };
     img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
