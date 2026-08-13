@@ -1,11 +1,11 @@
 /* XBTI 样式 —— 双主题：paper 诊断书米白 / cyber 赛博暗夜；移动端优先，桌面居中成"证书" */
 :root {
   --bg: #f4efe4; --card: #fffdf8; --ink: #2b2620; --sub: #6b6354;
-  --line: #e3ddd0; --accent: #d9480f; --accent2: #2b6cb0; --seal: #b23b2e;
+  --line: #e3ddd0; --accent: #d9480f; --accent2: #2b6cb0; --seal: #b23b2e; --accent-wash: rgba(217,72,15,0.09);
 }
 body.cyber {
   --bg: #0e0f1a; --card: #161827; --ink: #e8ecf5; --sub: #9aa3bd;
-  --line: #2a2f45; --accent: #ff5a5f; --accent2: #4cc9f0; --seal: #ff5a5f;
+  --line: #2a2f45; --accent: #ff5a5f; --accent2: #4cc9f0; --seal: #ff5a5f; --accent-wash: rgba(255,90,95,0.10);
 }
 * { box-sizing: border-box; }
 body {
@@ -52,7 +52,7 @@ body {
   font-family: inherit; font-size: 15px; transition: border-color .15s, transform .1s;
 }
 .opt:hover { border-color: var(--accent); }
-.opt.chosen { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--card)); }
+.opt.chosen { border-color: var(--accent); background: var(--accent-wash); }
 .opt-k { flex: 0 0 26px; height: 26px; line-height: 26px; text-align: center; border-radius: 50%; background: var(--line); color: var(--ink); font-weight: 700; }
 .opt.chosen .opt-k { background: var(--accent); color: #fff; }
 .nav { display: flex; justify-content: space-between; margin-top: 10px; }
@@ -87,7 +87,7 @@ body {
   border: 2px solid var(--seal); color: var(--seal); border-radius: 8px; font-size: 22px;
   transform: rotate(-12deg); opacity: .85; font-family: "KaiTi", serif;
 }
-.prescription { background: color-mix(in srgb, var(--accent) 6%, var(--card)); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 16px 0; }
+.prescription { background: var(--accent-wash); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 16px 0; }
 .rx-title { text-align: center; font-weight: 700; letter-spacing: 8px; color: var(--accent); }
 .rx-line { font-size: 13px; margin: 8px 0; }
 .rx-body { font-size: 14px; }
@@ -115,7 +115,7 @@ body {
 .info-label { display: block; font-size: 13px; color: var(--sub); margin-bottom: 6px; }
 .info-label .info-opt { font-size: 12px; color: var(--sub); }
 .info-label .info-val { float: right; font-size: 12px; color: var(--accent); font-family: ui-monospace, monospace; }
-.info-no { font-family: ui-monospace, monospace; font-size: 15px; color: var(--ink); background: color-mix(in srgb, var(--accent) 6%, var(--card)); border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; letter-spacing: 1px; }
+.info-no { font-family: ui-monospace, monospace; font-size: 15px; color: var(--ink); background: var(--accent-wash); border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; letter-spacing: 1px; }
 .info-fixed { font-size: 14px; color: var(--sub); background: var(--bg); border-radius: 10px; padding: 10px 12px; }
 .info-input { width: 100%; font-family: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; }
 .info-input:focus { outline: none; border-color: var(--accent); }
@@ -125,7 +125,7 @@ select.info-input { appearance: none; -webkit-appearance: none; }
 .info-agree input { margin-top: 3px; accent-color: var(--accent); flex: none; }
 
 /* 结果页：专属准考证水印 */
-.ticket { border: 1px dashed var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; background: color-mix(in srgb, var(--accent) 5%, var(--card)); }
+.ticket { border: 1px dashed var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; background: var(--accent-wash); }
 .ticket-main { min-width: 0; }
 .ticket-tag { font-size: 11px; color: var(--accent); letter-spacing: 3px; }
 .ticket-code { font-size: 18px; font-weight: 700; margin: 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

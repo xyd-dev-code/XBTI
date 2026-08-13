@@ -227,24 +227,46 @@
   }
   function saveReport() {
     const cert = document.querySelector("#report .cert");
-    if (!cert) return;
+    if (!cert) { toast("报告未就绪"); return; }
     const name = (type && type.name) || "xbti";
-    if (window.html2canvas) {
-      toast("正在生成报告图片…");
-      html2canvas(cert, {
-        backgroundColor: "#fffdf8",
-        scale: 2,
-        ignoreElements: (el) => el.id === "btn-retry" || (el.classList && el.classList.contains("share-row"))
-      }).then(canvas => {
+    if (!window.html2canvas) { fallbackRadar(name); return; }
+    toast("正在生成报告图片…");
+    const timer = setTimeout(() => {
+      toast("截图超时，已改存雷达图");
+      fallbackRadar(name);
+    }, 8000);
+    let done = false;
+    const finish = (canvas) => {
+      if (done) return; done = true; clearTimeout(timer);
+      try {
         canvas.toBlob(b => {
+          if (!b) { fallbackRadar(name); return; }
           const a = document.createElement("a");
-          a.href = URL.createObjectURL(b); a.download = name + "-诊断书.png"; a.click();
+          a.href = URL.createObjectURL(b); a.download = name + "-诊断书.png";
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 4000);
           toast("报告已保存 ✓");
-        });
-      }).catch(() => fallbackRadar(name));
-      return;
+        }, "image/png");
+      } catch (e) { fallbackRadar(name); }
+    };
+    try {
+      const p = html2canvas(cert, {
+        backgroundColor: "#fffdf8",
+        scale: Math.min(2, window.devicePixelRatio || 2),
+        useCORS: true,
+        logging: false,
+        ignoreElements: (el) => el.id === "btn-retry" || (el.classList && el.classList.contains("share-row")),
+        onclone: (doc) => {
+          doc.querySelectorAll("*").forEach(n => {
+            if (n.style) { n.style.animation = "none"; n.style.transition = "none"; }
+          });
+        }
+      });
+      if (p && typeof p.then === "function") p.then(finish).catch(() => { clearTimeout(timer); fallbackRadar(name); });
+      else { clearTimeout(timer); fallbackRadar(name); }
+    } catch (e) {
+      clearTimeout(timer); fallbackRadar(name);
     }
-    fallbackRadar(name);
   }
   function fallbackRadar(name) {
     const svg = $("#radar svg");
