@@ -13,7 +13,7 @@ export async function onRequestPost({ request, env }) {
   const created = Date.now();
   try {
     await env.XBTI_DB.prepare(
-      "INSERT INTO records (id, created_at, answers, scores, result_type, result_name, match_rate, meta) VALUES (?,?,?,?,?,?,?,?)"
+      "INSERT INTO records (id, created_at, answers, scores, result_type, result_name, match_rate, info, meta) VALUES (?,?,?,?,?,?,?,?,?)"
     ).bind(
       id, created,
       JSON.stringify(data.answers || []),
@@ -21,6 +21,7 @@ export async function onRequestPost({ request, env }) {
       data.result_type || "",
       data.result_name || "",
       data.match_rate || 0,
+      JSON.stringify(data.info || {}),
       JSON.stringify(data.meta || {})
     ).run();
     return json({ ok: true, id });

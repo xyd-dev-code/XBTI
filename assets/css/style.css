@@ -104,8 +104,40 @@ body {
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* 考生信息卡（考前填表） */
+.infocard { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px 20px; box-shadow: 0 10px 40px rgba(0,0,0,.06); }
+.info-head { text-align: center; border-bottom: 2px dashed var(--line); padding-bottom: 14px; margin-bottom: 16px; }
+.info-org { font-size: 17px; font-weight: 700; letter-spacing: 1px; }
+.info-sub { font-size: 12px; color: var(--sub); margin-top: 4px; }
+.info-row { margin-bottom: 16px; }
+.info-grid2 { display: flex; gap: 14px; }
+.info-grid2 .info-row { flex: 1; margin-bottom: 16px; }
+.info-label { display: block; font-size: 13px; color: var(--sub); margin-bottom: 6px; }
+.info-label .info-opt { font-size: 12px; color: var(--sub); }
+.info-label .info-val { float: right; font-size: 12px; color: var(--accent); font-family: ui-monospace, monospace; }
+.info-no { font-family: ui-monospace, monospace; font-size: 15px; color: var(--ink); background: color-mix(in srgb, var(--accent) 6%, var(--card)); border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; letter-spacing: 1px; }
+.info-fixed { font-size: 14px; color: var(--sub); background: var(--bg); border-radius: 10px; padding: 10px 12px; }
+.info-input { width: 100%; font-family: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; }
+.info-input:focus { outline: none; border-color: var(--accent); }
+select.info-input { appearance: none; -webkit-appearance: none; }
+.info-range { width: 100%; accent-color: var(--accent); }
+.info-agree { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--sub); line-height: 1.5; margin-bottom: 18px; cursor: pointer; }
+.info-agree input { margin-top: 3px; accent-color: var(--accent); flex: none; }
+
+/* 结果页：专属准考证水印 */
+.ticket { border: 1px dashed var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; background: color-mix(in srgb, var(--accent) 5%, var(--card)); }
+.ticket-main { min-width: 0; }
+.ticket-tag { font-size: 11px; color: var(--accent); letter-spacing: 3px; }
+.ticket-code { font-size: 18px; font-weight: 700; margin: 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticket-no { font-size: 11px; color: var(--sub); font-family: ui-monospace, monospace; }
+.ticket-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 12px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.ticket-field span { display: block; font-size: 11px; color: var(--sub); }
+.ticket-field b { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 @media (max-width: 480px) {
   .hero h1 { font-size: 32px; }
   .mt-name { font-size: 28px; }
   .q-text { font-size: 18px; }
+  .info-grid2 { flex-direction: column; gap: 0; }
+  .info-grid2 .info-row { margin-bottom: 16px; }
 }

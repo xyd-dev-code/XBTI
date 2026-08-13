@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS records (
   result_type  TEXT,                          -- 人格代号，如 ESFP
   result_name  TEXT,                          -- 人格名称，如 吗喽
   match_rate   INTEGER,                       -- 匹配度 %
+  info         TEXT,                          -- JSON: 考生信息卡(花名/坐标/星座/血量/熬夜)
   meta         TEXT                           -- JSON: ua 等附加信息
 );
 CREATE INDEX IF NOT EXISTS idx_records_created ON records (created_at DESC);
+-- 已部署环境如需补列：ALTER TABLE records ADD COLUMN info TEXT;

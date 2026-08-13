@@ -105,12 +105,20 @@
     .badge code { opacity: .85; font-weight: 400; }
     .match { font-weight: 700; color: var(--primary); font-size: 15px; }
 
-    .dim-pills { display: flex; flex-wrap: wrap; gap: 6px; max-width: 320px; }
-    .pill {
-      background: #fff; border: 1px solid var(--line); border-radius: 20px;
-      padding: 3px 8px; font-size: 11px; color: var(--muted);
+    .radar-cell {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      min-width: 150px;
     }
-    .pill b { color: var(--ink); margin-left: 3px; }
+    .radar-cell svg {
+      width: 140px; height: 140px; cursor: pointer;
+      transition: transform .15s;
+    }
+    .radar-cell svg:hover { transform: scale(1.08); }
+    .radar-dl {
+      font-size: 11px; color: var(--primary); background: none; border: none;
+      cursor: pointer; text-decoration: underline;
+    }
+    .radar-dl:hover { opacity: .7; }
 
     .answers {
       max-width: 260px;
@@ -136,7 +144,7 @@
       .token-bar { width: 100%; margin-left: 0; }
       .token-bar input { flex: 1; min-width: 0; }
       th, td { padding: 10px; }
-      .dim-pills { max-width: 200px; }
+      .radar-cell svg { width: 110px; height: 110px; }
       .answers { max-width: 160px; max-height: 70px; }
     }
   </style>
@@ -207,7 +215,8 @@
       return {
         ...r,
         scores: parseJson(r.scores) || {},
-        answers: parseJson(r.answers) || []
+        answers: parseJson(r.answers) || [],
+        info: parseJson(r.info) || null
       };
     }
 
@@ -226,12 +235,43 @@
       draw(records);
     }
 
-    function dimPills(scores) {
+    /* 复用 app.js 同款雷达图生成逻辑 */
+    function radarSVG(scores) {
+      if (!scores || !D.dimensions || !D.dimensions.length) return "";
+      const cx = 160, cy = 158, R = 108, dims = D.dimensions;
+      const ang = i => (-90 + i * 60) * Math.PI / 180;
+      const pt = (i, r) => [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))];
+      let grid = "";
+      [0.25, 0.5, 0.75, 1].forEach(f => {
+        const p = dims.map((_, i) => pt(i, R * f).map(n => n.toFixed(1)).join(",")).join(" ");
+        grid += `<polygon points="${p}" fill="none" stroke="#e3ddd0" stroke-width="1"/>`;
+      });
+      let axes = "", labels = "";
+      dims.forEach((d, i) => {
+        const [x, y] = pt(i, R);
+        axes += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e3ddd0" stroke-width="1"/>`;
+        const [lx, ly] = pt(i, R + 22);
+        const anchor = Math.abs(lx - cx) < 6 ? "middle" : (lx > cx ? "start" : "end");
+        labels += `<text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="${anchor}" font-size="11" fill="#5b5345" font-family="sans-serif">${d.label}</text>`;
+        const val = scores[d.key];
+        const [vx, vy] = pt(i, R * (val / 100));
+        labels += `<text x="${vx.toFixed(1)}" y="${(vy - 4).toFixed(1)}" text-anchor="middle" font-size="9" fill="#d9480f" font-family="sans-serif">${val}</text>`;
+      });
+      const poly = dims.map((d, i) => pt(i, R * (scores[d.key] / 100)).map(n => n.toFixed(1)).join(",")).join(" ");
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="100%" height="100%">
+        <rect x="0" y="0" width="320" height="320" rx="14" fill="#fffdf8"/>
+        ${grid}${axes}
+        <polygon points="${poly}" fill="rgba(217,72,15,0.28)" stroke="#d9480f" stroke-width="2" stroke-linejoin="round"/>
+        ${labels}
+      </svg>`;
+    }
+    function radarCell(scores, name) {
       if (!scores) return "-";
-      return Object.entries(scores).map(([k, v]) => {
-        const label = DIMS[k] || k;
-        return `<span class="pill">${label}<b>${v}</b></span>`;
-      }).join("");
+      const svg = radarSVG(scores);
+      return `<div class="radar-cell">
+        <div title="点击放大查看">${svg}</div>
+        <button class="radar-dl" data-name="${name}" data-scores='${JSON.stringify(scores)}'>下载雷达图</button>
+      </div>`;
     }
 
     function answersBlock(r) {
@@ -241,12 +281,22 @@
       return `<div class="answers" title="${text}">${text}</div>`;
     }
 
+    function codeCell(info) {
+      if (!info) return "-";
+      const code = info.code || "匿名考生";
+      return `<b style="white-space:nowrap;">${code}</b>`;
+    }
+    function locCell(info) {
+      if (!info) return "-";
+      return info.loc || "-";
+    }
+
     function draw(rows) {
       if (!rows.length) {
         $("#table").innerHTML = '<div class="empty"><b>暂无记录</b>先去答几题，再回来就能看到数据了</div>';
         return;
       }
-      const head = `<thead><tr><th style="width:110px">时间</th><th>人格</th><th style="width:70px">匹配度</th><th>六维</th><th>答题答案</th></tr></thead>`;
+      const head = `<thead><tr><th style="width:110px">时间</th><th>人格</th><th style="width:70px">匹配度</th><th>考生代号</th><th>当前坐标</th><th>六维</th><th>答题答案</th></tr></thead>`;
       const body = rows.map(r => `
         <tr>
           <td>
@@ -257,11 +307,34 @@
             <span class="badge">${r.result_name || "-"} <code>${r.result_type || ""}</code></span>
           </td>
           <td><span class="match">${r.match_rate != null ? r.match_rate + "%" : "-"}</span></td>
-          <td><div class="dim-pills">${dimPills(r.scores)}</div></td>
+          <td>${codeCell(r.info)}</td>
+          <td>${locCell(r.info)}</td>
+          <td>${radarCell(r.scores, r.result_name || "雷达图")}</td>
           <td>${answersBlock(r)}</td>
         </tr>
       `).join("");
       $("#table").innerHTML = `<table>${head}<tbody>${body}</tbody></table>`;
+      /* 雷达图下载事件委托 */
+      $("#table").addEventListener("click", function(e) {
+        const btn = e.target.closest(".radar-dl");
+        if (!btn) return;
+        const name = btn.getAttribute("data-name") || "xbti";
+        const sc = JSON.parse(btn.getAttribute("data-scores"));
+        const svg = btn.parentElement.querySelector("svg");
+        if (!svg) return;
+        const xml = new XMLSerializer().serializeToString(svg);
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement("canvas"); c.width = 640; c.height = 640;
+          const ctx = c.getContext("2d"); ctx.drawImage(img, 0, 0, 640, 640);
+          c.toBlob(b => {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(b); a.download = name + "-雷达图.png"; a.click();
+            toast("已下载：" + name + "-雷达图.png");
+          });
+        };
+        img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+      });
     }
 
     async function load() {
@@ -283,12 +356,14 @@
     function exportCSV() {
       const rows = window.__records || [];
       if (!rows.length) { toast("没有可导出的数据"); return; }
-      const header = ["record_id", "created_at", "result_type", "result_name", "match_rate", "scores", "answers"];
+      const header = ["record_id", "created_at", "result_type", "result_name", "match_rate", "code_name", "location", "scores", "answers"];
       const lines = [header.join(",")];
       rows.forEach(r => {
         const sc = r.scores ? JSON.stringify(r.scores).replace(/"/g, '""') : "";
         const an = Array.isArray(r.answers) ? r.answers.join("") : "";
-        lines.push([r.record_id, r.created_at, r.result_type, r.result_name, r.match_rate, '"' + sc + '"', '"' + an + '"'].join(","));
+        const codeName = r.info ? (r.info.code || "") : "";
+        const location = r.info ? (r.info.loc || "") : "";
+        lines.push([r.record_id, r.created_at, r.result_type, r.result_name, r.match_rate, '"' + codeName + '"', '"' + location + '"', '"' + sc + '"', '"' + an + '"'].join(","));
       });
       const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv" });
       const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "xbti-records.csv"; a.click();

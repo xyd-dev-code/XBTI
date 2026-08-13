@@ -178,6 +178,65 @@
       <p class="landing-disclaimer">娱乐测试，非心理诊断。结果仅供自嘲，不作就医、入职、相亲依据。</p>
     </section>
 
+    <!-- 考生信息卡（考前填表） -->
+    <section id="view-info" class="hidden">
+      <div class="infocard">
+        <div class="info-head">
+          <div class="info-org">XBTI 精神状态全国统一测试</div>
+          <div class="info-sub">考生信息卡 · 仅供娱乐</div>
+        </div>
+
+        <div class="info-row">
+          <label class="info-label">准考证号</label>
+          <div class="info-no" id="info-no">XBTI-000000-000000</div>
+        </div>
+
+        <div class="info-row">
+          <label class="info-label" for="info-code">考生代号 <span class="info-opt">（给自己起个赛博花名）</span></label>
+          <input id="info-code" class="info-input" type="text" maxlength="16" placeholder="如：深夜 emo 诗人" />
+        </div>
+
+        <div class="info-row">
+          <label class="info-label">报考科目</label>
+          <div class="info-fixed">精神状态鉴定（XBTI）</div>
+        </div>
+
+        <div class="info-grid2">
+          <div class="info-row">
+            <label class="info-label" for="info-hp">今日血量</label>
+            <select id="info-hp" class="info-input">
+              <option>满血</option><option>半血</option><option>残血</option><option>已故</option><option>薛定谔态</option>
+            </select>
+          </div>
+          <div class="info-row">
+            <label class="info-label" for="info-loc">当前坐标</label>
+            <select id="info-loc" class="info-input">
+              <option>工位</option><option>被窝</option><option>厕所</option><option>地铁</option><option>老板视线死角</option><option>图书馆</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <label class="info-label" for="info-stayup">连续熬夜 <span class="info-val" id="info-stayup-val">0h · 修仙 Lv.0</span></label>
+          <input id="info-stayup" class="info-range" type="range" min="0" max="72" step="1" value="0" />
+        </div>
+
+        <div class="info-row">
+          <label class="info-label" for="info-sign">赛博星座</label>
+          <select id="info-sign" class="info-input">
+            <option>摆烂座</option><option>退堂鼓座</option><option>发疯座</option><option>摸鱼座</option><option>内耗座</option>
+          </select>
+        </div>
+
+        <label class="info-agree">
+          <input type="checkbox" id="info-agree" checked />
+          <span>本人郑重承诺以上纯属虚构，如有雷同，说明咱俩一样疯</span>
+        </label>
+
+        <button class="btn block" id="btn-enter">进入考场 →</button>
+      </div>
+    </section>
+
     <!-- 答题页 -->
     <section id="view-quiz" class="hidden">
       <div class="progress">
