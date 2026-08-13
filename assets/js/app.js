@@ -260,34 +260,33 @@
     }
   }
   function buildReportSVG(type, matchRate, scores) {
-    const W = 720, PAD = 40, CW = W - PAD * 2;
+    const W = 720, PAD = 40;
     const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     const wrap = (t, max) => { t = String(t); const out = []; for (let i = 0; i < t.length; i += max) out.push(t.slice(i, i + max)); return out; };
     const label = (txt, y, color) => `<text x="${PAD}" y="${y}" font-size="16" font-weight="700" fill="${color}" font-family="sans-serif">${esc(txt)}</text>`;
     const line = (txt, y, size, color) => `<text x="${PAD}" y="${y}" font-size="${size}" fill="${color}" font-family="sans-serif">${esc(txt)}</text>`;
-    let y = 60, s = "";
-    s += `<rect x="0" y="0" width="${W}" height="100%" fill="#fffdf8"/>`;
-    s += `<rect x="12" y="12" width="${W - 24}" height="calc(100% - 24)" fill="none" stroke="#e3ddd0" stroke-width="1.5" rx="14"/>`;
-    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="23" font-weight="700" fill="#d9480f" font-family="sans-serif">XBTI 国家精神状态鉴定中心</text>`; y += 26;
-    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="12" fill="#6b6354" font-family="sans-serif">经 ISO 23333 抽象质量管理体系认证</text>`; y += 22;
-    s += `<line x1="${PAD}" y1="${y}" x2="${W - PAD}" y2="${y}" stroke="#e3ddd0" stroke-width="1"/>`; y += 32;
-    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="14" fill="#6b6354" font-family="sans-serif">你被确诊为</text>`; y += 40;
-    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="36" font-weight="800" fill="#2b2620" font-family="sans-serif">${esc(type.name)}</text>`; y += 30;
-    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="15" fill="#d9480f" font-family="sans-serif">${esc(type.code)} · 匹配度 ${matchRate}%</text>`; y += 24;
+    let y = 60, body = "";
+    body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="23" font-weight="700" fill="#d9480f" font-family="sans-serif">XBTI 国家精神状态鉴定中心</text>`; y += 26;
+    body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="12" fill="#6b6354" font-family="sans-serif">经 ISO 23333 抽象质量管理体系认证</text>`; y += 22;
+    body += `<line x1="${PAD}" y1="${y}" x2="${W - PAD}" y2="${y}" stroke="#e3ddd0" stroke-width="1"/>`; y += 32;
+    body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="14" fill="#6b6354" font-family="sans-serif">你被确诊为</text>`; y += 40;
+    body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="36" font-weight="800" fill="#2b2620" font-family="sans-serif">${esc(type.name)}</text>`; y += 30;
+    body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="15" fill="#d9480f" font-family="sans-serif">${esc(type.code)} · 匹配度 ${matchRate}%</text>`; y += 24;
     const radarS = 300, radarX = (W - radarS) / 2, radarY = y;
-    s += `<svg x="${radarX}" y="${radarY}" width="${radarS}" height="${radarS}" viewBox="0 0 320 320">${radarSVG(scores)}</svg>`;
+    body += `<svg x="${radarX}" y="${radarY}" width="${radarS}" height="${radarS}" viewBox="0 0 320 320">${radarSVG(scores)}</svg>`;
     y += radarS + 16;
-    s += label("学术解读（伪）", y, "#b23b2e"); y += 26;
-    wrap(type.academic, 40).forEach(l => { s += line(l, y, 15, "#2b2620"); y += 24; }); y += 10;
-    s += label("隐藏槽点", y, "#b23b2e"); y += 26;
-    wrap(type.flaw, 40).forEach(l => { s += line(l, y, 15, "#2b2620"); y += 24; }); y += 10;
-    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="18" font-weight="700" fill="#b23b2e" font-family="sans-serif">「 ${esc(type.verdict)} 」</text>`; y += 28;
-    s += label("处 方 笺", y, "#b23b2e"); y += 24;
-    s += line("诊断：当代青年标准精神损耗（" + esc(type.name) + "型）", y, 14, "#6b6354"); y += 22;
-    wrap(buildPrescription(type).replace(/<br>\s*/g, " "), 42).forEach(l => { s += line(l, y, 14, "#2b2620"); y += 22; }); y += 8;
-    wrap(D.meta.disclaimer, 44).forEach((l, i) => { s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="11" fill="#9a9384" font-family="sans-serif">${esc(l)}</text>`; y += 16; });
+    body += label("学术解读（伪）", y, "#b23b2e"); y += 26;
+    wrap(type.academic, 40).forEach(l => { body += line(l, y, 15, "#2b2620"); y += 24; }); y += 10;
+    body += label("隐藏槽点", y, "#b23b2e"); y += 26;
+    wrap(type.flaw, 40).forEach(l => { body += line(l, y, 15, "#2b2620"); y += 24; }); y += 10;
+    body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="18" font-weight="700" fill="#b23b2e" font-family="sans-serif">「 ${esc(type.verdict)} 」</text>`; y += 28;
+    body += label("处 方 笺", y, "#b23b2e"); y += 24;
+    body += line("诊断：当代青年标准精神损耗（" + esc(type.name) + "型）", y, 14, "#6b6354"); y += 22;
+    wrap(buildPrescription(type).replace(/<br>\s*/g, " "), 42).forEach(l => { body += line(l, y, 14, "#2b2620"); y += 22; }); y += 8;
+    wrap(D.meta.disclaimer, 44).forEach(l => { body += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="11" fill="#9a9384" font-family="sans-serif">${esc(l)}</text>`; y += 16; });
     const H = y + 28;
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${s}</svg>`;
+    const bg = `<rect x="0" y="0" width="${W}" height="${H}" fill="#fffdf8"/><rect x="12" y="12" width="${W - 24}" height="${H - 24}" fill="none" stroke="#e3ddd0" stroke-width="1.5" rx="14"/>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${bg}${body}</svg>`;
   }
   let toastTimer;
   function toast(msg) {
