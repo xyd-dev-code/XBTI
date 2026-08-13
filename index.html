@@ -6,17 +6,176 @@
   <title>XBTI 精神状态鉴定 · 当代年轻人精神状态，一测便知（但不准）</title>
   <meta name="description" content="XBTI 搞怪版人格测试：30 道抽象题，27 种奇葩人格，一份适合截图发朋友圈的精神状态诊断书。" />
   <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    /* ===== Landing page 专属视觉 ===== */
+    .landing {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 18px 60px;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+    .landing-bg {
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(217,72,15,.08) 0%, transparent 35%),
+        radial-gradient(circle at 80% 70%, rgba(43,38,32,.04) 0%, transparent 35%);
+    }
+    .landing-brand {
+      position: relative; z-index: 1;
+      font-size: 18px; letter-spacing: 10px; color: #6b6354;
+      margin-bottom: 8px;
+    }
+    .landing-title {
+      position: relative; z-index: 1;
+      font-size: clamp(42px, 10vw, 78px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin: 0 0 14px;
+      background: linear-gradient(135deg, #2b2620 0%, #d9480f 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .landing-seal {
+      position: relative; z-index: 1;
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fffdf8; border: 1px solid #e3ddd0;
+      color: #6b6354; font-size: 12px;
+      padding: 5px 12px; border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(43,38,32,.06);
+      margin-bottom: 22px;
+    }
+    .landing-seal::before {
+      content: "✓"; display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%; background: #2f9e44; color: #fff; font-size: 10px;
+    }
+    .landing-slogan {
+      position: relative; z-index: 1;
+      font-size: clamp(15px, 3.6vw, 20px);
+      color: #5b5345; max-width: 520px; margin: 0 auto 28px; line-height: 1.6;
+    }
+    .landing-stats {
+      position: relative; z-index: 1;
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    .landing-stats span {
+      background: rgba(255,255,255,.7); border: 1px solid #e3ddd0;
+      border-radius: 24px; padding: 7px 16px; font-size: 13px; color: #5b5345;
+    }
+    .landing-stats b { color: #d9480f; margin-right: 3px; }
+
+    .landing-preview {
+      position: relative; z-index: 1;
+      width: min(420px, 92vw); background: #fffdf8;
+      border: 1px solid #e3ddd0; border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(43,38,32,.1);
+      padding: 18px; text-align: left; margin-bottom: 30px;
+      transform: rotate(-1.5deg);
+    }
+    .landing-preview-head {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; color: #6b6354; border-bottom: 1px dashed #e3ddd0; padding-bottom: 10px; margin-bottom: 12px;
+    }
+    .landing-preview-type {
+      font-size: 22px; font-weight: 700; color: #2b2620; margin-bottom: 4px;
+    }
+    .landing-preview-sub { font-size: 13px; color: #d9480f; margin-bottom: 12px; }
+    .landing-preview-bar {
+      height: 8px; background: #f0e9da; border-radius: 4px; overflow: hidden; margin-bottom: 12px;
+    }
+    .landing-preview-bar i { display: block; height: 100%; width: 89%; background: linear-gradient(90deg, #d9480f, #e6773e); }
+    .landing-preview-verdict {
+      font-size: 13px; color: #5b5345; border-left: 3px solid #d9480f; padding-left: 10px;
+    }
+
+    .landing-cta {
+      position: relative; z-index: 1;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #d9480f, #e6773e);
+      color: #fff; border: none; border-radius: 50px;
+      padding: 16px 42px; font-size: 17px; font-weight: 600;
+      cursor: pointer; box-shadow: 0 10px 28px rgba(217,72,15,.32);
+      transition: transform .1s, box-shadow .15s;
+    }
+    .landing-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(217,72,15,.38); }
+    .landing-cta:active { transform: translateY(0); }
+
+    .landing-disclaimer {
+      position: relative; z-index: 1;
+      margin-top: 22px; font-size: 12px; color: #8a8275; max-width: 460px; line-height: 1.6;
+    }
+
+    .floating-tags {
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    }
+    .floating-tags span {
+      position: absolute;
+      background: #fffdf8; border: 1px solid #e3ddd0;
+      color: #6b6354; font-size: 12px; padding: 5px 12px; border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(43,38,32,.06);
+      animation: float 5s ease-in-out infinite;
+    }
+    .floating-tags span:nth-child(1) { top: 12%; left: 8%; animation-delay: 0s; }
+    .floating-tags span:nth-child(2) { top: 22%; right: 10%; animation-delay: 1.2s; }
+    .floating-tags span:nth-child(3) { top: 62%; left: 6%; animation-delay: 2.4s; }
+    .floating-tags span:nth-child(4) { bottom: 18%; right: 8%; animation-delay: 3.6s; }
+    .floating-tags span:nth-child(5) { top: 44%; right: 5%; animation-delay: .8s; }
+    .floating-tags span:nth-child(6) { bottom: 28%; left: 12%; animation-delay: 2s; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(1deg); }
+    }
+    @media (max-width: 640px) {
+      .floating-tags span:nth-child(5), .floating-tags span:nth-child(6) { display: none; }
+      .landing-preview { transform: none; }
+    }
+  </style>
 </head>
 <body class="paper">
   <div class="wrap">
 
     <!-- 开始页 -->
-    <section id="view-start" class="hero">
-      <div class="zh">X B T I</div>
-      <h1>精神状态鉴定</h1>
-      <p class="slogan" id="slogan">当代年轻人精神状态，一测便知（但不准）。</p>
-      <button class="btn block" id="btn-start">开始测试 →</button>
-      <p class="disclaimer">娱乐测试，非心理诊断。结果仅供自嘲，不作就医、入职、相亲依据（尤其不能作相亲依据）。</p>
+    <section id="view-start" class="landing">
+      <div class="landing-bg"></div>
+      <div class="floating-tags">
+        <span>赛博咸鱼</span>
+        <span>吗喽</span>
+        <span>人形退堂鼓</span>
+        <span>恋爱脑化石</span>
+        <span>电子布洛芬</span>
+        <span>薛定谔的打工人</span>
+      </div>
+
+      <div class="landing-brand">X B T I</div>
+      <h1 class="landing-title">精神状态鉴定</h1>
+      <div class="landing-seal">ISO 23333 抽象质量管理体系认证（伪）</div>
+      <p class="landing-slogan" id="slogan">当代年轻人精神状态，一测便知（但不准）。</p>
+
+      <div class="landing-stats">
+        <span><b>30</b>道抽象题</span>
+        <span><b>27</b>种奇葩人格</span>
+        <span><b>6</b>维精神状态雷达</span>
+      </div>
+
+      <div class="landing-preview">
+        <div class="landing-preview-head">
+          <span>📋 诊断书预览</span>
+          <span>No. XBTI-202608-000001</span>
+        </div>
+        <div class="landing-preview-type">拖延症晚期 <span style="font-size:13px;color:#6b6354;font-weight:400;">INTP</span></div>
+        <div class="landing-preview-sub">匹配度 89% 确诊</div>
+        <div class="landing-preview-bar"><i></i></div>
+        <div class="landing-preview-verdict">「你不是在拖延，你是在等灵感自己上门。」</div>
+      </div>
+
+      <button class="landing-cta" id="btn-start">开始测试 →</button>
+      <p class="landing-disclaimer">娱乐测试，非心理诊断。结果仅供自嘲，不作就医、入职、相亲依据（尤其不能作相亲依据）。</p>
     </section>
 
     <!-- 答题页 -->
