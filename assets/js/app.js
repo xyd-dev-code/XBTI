@@ -6,6 +6,7 @@
   const SUBMIT = window.XBTI_SUBMIT;
 
   const state = { idx: 0, answers: new Array(D.questions.length).fill(null), info: null };
+  let reportData = null;
   const infoState = { no: "", stayupLv: 0 };
 
   /* ---------- 工具 ---------- */
@@ -186,6 +187,7 @@
 
     const box = $("#report");
     box.innerHTML = html;
+    reportData = { type, matchRate, scores };
 
     // 分享按钮
     $("#btn-copy-verdict").onclick = () => copyText(type.verdict);
@@ -226,63 +228,66 @@
     } else { toast("当前环境不支持自动复制"); }
   }
   function saveReport() {
-    const cert = document.querySelector("#report .cert");
-    if (!cert) { toast("报告未就绪"); return; }
-    const name = (type && type.name) || "xbti";
-    if (!window.html2canvas) { fallbackRadar(name); return; }
+    if (!reportData || !reportData.type) { toast("报告未就绪"); return; }
+    const name = reportData.type.name || "xbti";
     toast("正在生成报告图片…");
-    const timer = setTimeout(() => {
-      toast("截图超时，已改存雷达图");
-      fallbackRadar(name);
-    }, 8000);
-    let done = false;
-    const finish = (canvas) => {
-      if (done) return; done = true; clearTimeout(timer);
-      try {
-        canvas.toBlob(b => {
-          if (!b) { fallbackRadar(name); return; }
+    try {
+      const svgStr = buildReportSVG(reportData.type, reportData.matchRate, reportData.scores);
+      const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const scale = 2, W = 720;
+        const c = document.createElement("canvas");
+        c.width = W * scale; c.height = img.height * scale;
+        const ctx = c.getContext("2d");
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        c.toBlob(b => {
+          if (!b) { toast("报告生成失败"); return; }
           const a = document.createElement("a");
           a.href = URL.createObjectURL(b); a.download = name + "-诊断书.png";
           document.body.appendChild(a); a.click(); a.remove();
           setTimeout(() => URL.revokeObjectURL(a.href), 4000);
           toast("报告已保存 ✓");
         }, "image/png");
-      } catch (e) { fallbackRadar(name); }
-    };
-    try {
-      const p = html2canvas(cert, {
-        backgroundColor: "#fffdf8",
-        scale: Math.min(2, window.devicePixelRatio || 2),
-        useCORS: true,
-        logging: false,
-        ignoreElements: (el) => el.id === "btn-retry" || (el.classList && el.classList.contains("share-row")),
-        onclone: (doc) => {
-          doc.querySelectorAll("*").forEach(n => {
-            if (n.style) { n.style.animation = "none"; n.style.transition = "none"; }
-          });
-        }
-      });
-      if (p && typeof p.then === "function") p.then(finish).catch(() => { clearTimeout(timer); fallbackRadar(name); });
-      else { clearTimeout(timer); fallbackRadar(name); }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); toast("报告生成失败"); };
+      img.src = url;
     } catch (e) {
-      clearTimeout(timer); fallbackRadar(name);
+      toast("报告生成失败");
     }
   }
-  function fallbackRadar(name) {
-    const svg = $("#radar svg");
-    if (!svg) return;
-    const xml = new XMLSerializer().serializeToString(svg);
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement("canvas"); c.width = 640; c.height = 640;
-      const ctx = c.getContext("2d"); ctx.drawImage(img, 0, 0, 640, 640);
-      c.toBlob(b => {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(b); a.download = name + "-雷达图.png"; a.click();
-        toast("已保存雷达图 ✓");
-      });
-    };
-    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+  function buildReportSVG(type, matchRate, scores) {
+    const W = 720, PAD = 40, CW = W - PAD * 2;
+    const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const wrap = (t, max) => { t = String(t); const out = []; for (let i = 0; i < t.length; i += max) out.push(t.slice(i, i + max)); return out; };
+    const label = (txt, y, color) => `<text x="${PAD}" y="${y}" font-size="16" font-weight="700" fill="${color}" font-family="sans-serif">${esc(txt)}</text>`;
+    const line = (txt, y, size, color) => `<text x="${PAD}" y="${y}" font-size="${size}" fill="${color}" font-family="sans-serif">${esc(txt)}</text>`;
+    let y = 60, s = "";
+    s += `<rect x="0" y="0" width="${W}" height="100%" fill="#fffdf8"/>`;
+    s += `<rect x="12" y="12" width="${W - 24}" height="calc(100% - 24)" fill="none" stroke="#e3ddd0" stroke-width="1.5" rx="14"/>`;
+    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="23" font-weight="700" fill="#d9480f" font-family="sans-serif">XBTI 国家精神状态鉴定中心</text>`; y += 26;
+    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="12" fill="#6b6354" font-family="sans-serif">经 ISO 23333 抽象质量管理体系认证</text>`; y += 22;
+    s += `<line x1="${PAD}" y1="${y}" x2="${W - PAD}" y2="${y}" stroke="#e3ddd0" stroke-width="1"/>`; y += 32;
+    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="14" fill="#6b6354" font-family="sans-serif">你被确诊为</text>`; y += 40;
+    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="36" font-weight="800" fill="#2b2620" font-family="sans-serif">${esc(type.name)}</text>`; y += 30;
+    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="15" fill="#d9480f" font-family="sans-serif">${esc(type.code)} · 匹配度 ${matchRate}%</text>`; y += 24;
+    const radarS = 300, radarX = (W - radarS) / 2, radarY = y;
+    s += `<svg x="${radarX}" y="${radarY}" width="${radarS}" height="${radarS}" viewBox="0 0 320 320">${radarSVG(scores)}</svg>`;
+    y += radarS + 16;
+    s += label("学术解读（伪）", y, "#b23b2e"); y += 26;
+    wrap(type.academic, 40).forEach(l => { s += line(l, y, 15, "#2b2620"); y += 24; }); y += 10;
+    s += label("隐藏槽点", y, "#b23b2e"); y += 26;
+    wrap(type.flaw, 40).forEach(l => { s += line(l, y, 15, "#2b2620"); y += 24; }); y += 10;
+    s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="18" font-weight="700" fill="#b23b2e" font-family="sans-serif">「 ${esc(type.verdict)} 」</text>`; y += 28;
+    s += label("处 方 笺", y, "#b23b2e"); y += 24;
+    s += line("诊断：当代青年标准精神损耗（" + esc(type.name) + "型）", y, 14, "#6b6354"); y += 22;
+    wrap(buildPrescription(type).replace(/<br>\s*/g, " "), 42).forEach(l => { s += line(l, y, 14, "#2b2620"); y += 22; }); y += 8;
+    wrap(D.meta.disclaimer, 44).forEach((l, i) => { s += `<text x="${W / 2}" y="${y}" text-anchor="middle" font-size="11" fill="#9a9384" font-family="sans-serif">${esc(l)}</text>`; y += 16; });
+    const H = y + 28;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${s}</svg>`;
   }
   let toastTimer;
   function toast(msg) {

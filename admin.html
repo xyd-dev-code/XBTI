@@ -92,7 +92,7 @@
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     thead { background: #f0e9da; }
     th { text-align: left; padding: 13px 14px; font-weight: 600; color: var(--ink); font-size: 12px; letter-spacing: .5px; }
-    td { padding: 14px; border-top: 1px solid var(--line); vertical-align: top; }
+    td { padding: 14px; border-top: 1px solid var(--line); vertical-align: middle; text-align: center; }
     tbody tr:hover { background: rgba(217,72,15,.04); }
 
     .time { font-size: 12px; color: var(--muted); margin-top: 4px; }
@@ -127,6 +127,74 @@
       max-height: 90px; overflow: auto; line-height: 1.6;
     }
 
+    /* 答题详情触发按钮 */
+    .ans-trigger {
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      color: #fff; border: none; border-radius: 20px;
+      padding: 6px 14px; font-size: 12px; cursor: pointer;
+      transition: opacity .15s, transform .08s; white-space: nowrap;
+    }
+    .ans-trigger:hover { opacity: .85; }
+    .ans-trigger:active { transform: scale(.96); }
+
+    /* 答题弹窗 */
+    .ans-modal-overlay {
+      position: fixed; inset: 0; background: rgba(43,38,32,.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; animation: ans-fade-in .2s ease;
+    }
+    @keyframes ans-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .ans-modal {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); box-shadow: 0 20px 60px rgba(43,38,32,.2);
+      width: 90%; max-width: 680px; max-height: 82vh;
+      display: flex; flex-direction: column;
+      animation: ans-slide-up .25s ease;
+    }
+    @keyframes ans-slide-up { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .ans-modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--line);
+      font-weight: 700; font-size: 15px;
+    }
+    .ans-modal-close {
+      background: none; border: none; font-size: 20px; cursor: pointer;
+      color: var(--muted); padding: 4px 8px; border-radius: 8px;
+      transition: background .15s;
+    }
+    .ans-modal-close:hover { background: rgba(0,0,0,.06); }
+    .ans-modal-body {
+      padding: 12px 16px 20px; overflow-y: auto; flex: 1;
+    }
+    .ans-item {
+      border: 1px solid var(--line); border-radius: 12px;
+      margin-bottom: 10px; overflow: hidden;
+      transition: box-shadow .15s;
+    }
+    .ans-item:hover { box-shadow: 0 2px 10px rgba(43,38,32,.08); }
+    .ans-item.expanded { box-shadow: 0 4px 16px rgba(217,72,15,.1); }
+    .ans-item-head {
+      padding: 12px 14px; cursor: pointer; font-size: 13px;
+      display: flex; align-items: flex-start; gap: 8px;
+      user-select: none; transition: background .12s;
+    }
+    .ans-item-head:hover { background: rgba(217,72,15,.03); }
+    .ans-item-head b { color: var(--primary); flex: none; min-width: 32px; }
+    .ans-item-body {
+      display: none; padding: 0 14px 12px 42px;
+    }
+    .ans-item.expanded .ans-item-body { display: block; }
+    .ans-opts { display: flex; flex-direction: column; gap: 6px; }
+    .ans-opt {
+      display: inline-block; padding: 5px 10px; border-radius: 8px;
+      font-size: 12.5px; background: #f8f5ee; color: var(--muted);
+      border: 1px solid transparent; transition: border-color .12s;
+    }
+    .ans-opt.picked {
+      background: rgba(217,72,15,.08); color: var(--primary);
+      border-color: rgba(217,72,15,.25); font-weight: 600;
+    }
+
     .empty {
       text-align: center; padding: 60px 20px; color: var(--muted);
     }
@@ -145,7 +213,10 @@
       .token-bar input { flex: 1; min-width: 0; }
       th, td { padding: 10px; }
       .radar-cell svg { width: 110px; height: 110px; }
-      .answers { max-width: 160px; max-height: 70px; }
+      .ans-modal { width: 95%; max-height: 88vh; }
+      .ans-item-head { font-size: 12.5px; padding: 10px 12px; }
+      .ans-item-body { padding: 0 12px 10px 36px; }
+      .ans-opt { font-size: 12px; }
     }
   </style>
 </head>
@@ -270,15 +341,15 @@
       const svg = radarSVG(scores);
       return `<div class="radar-cell">
         <div title="点击放大查看">${svg}</div>
-        <button class="radar-dl" data-name="${name}" data-scores='${JSON.stringify(scores)}'>下载雷达图</button>
+        <button class="radar-dl" data-name="${name}" data-scores='${JSON.stringify(scores)}'>保存报告</button>
       </div>`;
     }
 
     function answersBlock(r) {
       const ans = Array.isArray(r.answers) ? r.answers : [];
-      if (!ans.length) return "-";
-      const text = ans.map((a, i) => `Q${i + 1}:${a}`).join(" ");
-      return `<div class="answers" title="${text}">${text}</div>`;
+      if (!ans.length) return `<span style="color:var(--muted)">-</span>`;
+      const name = r.result_name || "报告";
+      return `<button class="ans-trigger" data-answers='${JSON.stringify({ ans, name })}' title="点击查看整张试卷">📋 查看试卷</button>`;
     }
 
     function codeCell(info) {
@@ -314,27 +385,157 @@
         </tr>
       `).join("");
       $("#table").innerHTML = `<table>${head}<tbody>${body}</tbody></table>`;
-      /* 雷达图下载事件委托 */
+      /* 保存报告 / 答题弹窗 事件委托 */
       $("#table").addEventListener("click", function(e) {
+        /* ---- 保存报告 ---- */
         const btn = e.target.closest(".radar-dl");
-        if (!btn) return;
-        const name = btn.getAttribute("data-name") || "xbti";
-        const sc = JSON.parse(btn.getAttribute("data-scores"));
-        const svg = btn.parentElement.querySelector("svg");
-        if (!svg) return;
-        const xml = new XMLSerializer().serializeToString(svg);
+        if (btn) {
+          const row = btn.closest("tr");
+          if (!row) return;
+          const name = btn.getAttribute("data-name") || "xbti";
+          const sc = JSON.parse(btn.getAttribute("data-scores"));
+          const matchEl = row.cells[2] ? row.cells[2].textContent.trim() : "-";
+          const timeEl = row.cells[0] ? row.cells[0].querySelector(".time") : null;
+          const recordId = timeEl ? timeEl.textContent.trim() : "-";
+          const codeEl = row.cells[3] ? row.cells[3] : null;
+          const codeName = codeEl ? (codeEl.textContent.trim() || "-") : "-";
+          saveReportImage(name, sc, matchEl, recordId, codeName);
+          return;
+        }
+        /* ---- 答题详情弹窗 ---- */
+        const ansBtn = e.target.closest(".ans-trigger");
+        if (ansBtn) {
+          const data = ansBtn.getAttribute("data-answers");
+          openAnswerModal(data);
+        }
+      });
+    }
+
+    /* ---------- 保存报告图片 ---------- */
+    function saveReportImage(name, scores, matchRate, recordId, codeName) {
+      const W = 720, H = 920;
+      const c = document.createElement("canvas"); c.width = W; c.height = H;
+      const ctx = c.getContext("2d");
+
+      /* 背景 */
+      ctx.fillStyle = "#fffdf8"; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#2b2620"; ctx.fillRect(0, 0, W, 80);
+
+      /* 标题区 */
+      ctx.fillStyle = "#fff"; ctx.font = "700 26px sans-serif";
+      ctx.fillText("XBTI 精神状态鉴定报告", 30, 48);
+      ctx.font = "13px sans-serif"; ctx.fillStyle = "rgba(255,255,255,.65)";
+      ctx.fillText("报告编号：" + recordId + " ｜ 考生：" + codeName, 30, 70);
+
+      /* 卡片：人格 + 匹配度 */
+      roundRect(ctx, 24, 100, W - 48, 90, 14, "#fff", "#e3ddd0");
+      ctx.fillStyle = "#d9480f"; ctx.font = "700 32px sans-serif";
+      ctx.fillText(name, 44, 148);
+      ctx.fillStyle = "#6b6354"; ctx.font = "14px sans-serif";
+      ctx.fillText("匹配度：" + matchRate, 44, 176);
+
+      /* 雷达图区域标题 */
+      ctx.fillStyle = "#2b2620"; ctx.font = "600 15px sans-serif";
+      ctx.fillText("六维精神状态坐标", 30, 220);
+
+      /* 绘制雷达图到 canvas（复用 SVG 逻辑） */
+      const svgStr = radarSVG(scores);
+      if (svgStr) {
+        const xml = new XMLSerializer().serializeToString(parseSVG(svgStr));
         const img = new Image();
         img.onload = () => {
-          const c = document.createElement("canvas"); c.width = 640; c.height = 640;
-          const ctx = c.getContext("2d"); ctx.drawImage(img, 0, 0, 640, 640);
+          ctx.drawImage(img, (W - 400) / 2, 236, 400, 400);
+
+          /* 底部信息 */
+          ctx.fillStyle = "#6b6354"; ctx.font = "12px sans-serif";
+          ctx.fillText("生成时间：" + new Date().toLocaleString("zh-CN"), 30, H - 24);
+          ctx.fillText("XBTI 国家精神状态鉴定中心（虚构）", W - 290, H - 24);
+
           c.toBlob(b => {
             const a = document.createElement("a");
-            a.href = URL.createObjectURL(b); a.download = name + "-雷达图.png"; a.click();
-            toast("已下载：" + name + "-雷达图.png");
-          });
+            a.href = URL.createObjectURL(b);
+            a.download = name + "-报告.png";
+            a.click();
+            toast("已保存：" + name + "-报告.png");
+          }, "image/png");
         };
         img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+      }
+    }
+
+    function parseSVG(str) {
+      const p = new DOMParser().parseFromString(str, "image/svg+xml");
+      return p.documentElement;
+    }
+
+    function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y + r, r);
+      ctx.arcTo(x, y, x + r, y, r);
+      ctx.closePath();
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
+    }
+
+    /* ---------- 答题详情弹窗 ---------- */
+    function openAnswerModal(dataJson) {
+      let payload;
+      try { payload = typeof dataJson === "string" ? JSON.parse(dataJson) : dataJson; } catch { return; }
+      const { ans, name } = payload;
+      if (!ans || !ans.length) return;
+
+      const qs = (D.questions || []);
+      const modal = document.createElement("div");
+      modal.className = "ans-modal-overlay";
+      modal.innerHTML = `
+        <div class="ans-modal">
+          <div class="ans-modal-head">
+            <span>📋 ${escHtml(name)} — 整张试卷</span>
+            <button class="ans-modal-close" type="button">✕</button>
+          </div>
+          <div class="ans-modal-body">${renderAnswerItems(ans, qs)}</div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener("click", e => {
+        if (e.target === modal || e.target.classList.contains("ans-modal-close")) {
+          modal.remove();
+        }
       });
+      /* 折叠/展开 */
+      modal.addEventListener("click", e => {
+        const hd = e.target.closest(".ans-item-head");
+        if (!hd) return;
+        const item = hd.parentElement;
+        item.classList.toggle("expanded");
+      });
+    }
+
+    function renderAnswerItems(ans, qs) {
+      return ans.map((a, i) => {
+        const q = qs[i] || {};
+        const qText = escHtml(q.text || ("第 " + (i + 1) + " 题"));
+        const opts = Array.isArray(q.options) ? q.options : [];
+        let optsHtml = "";
+        if (opts.length) {
+          optsHtml = `<div class="ans-opts">${opts.map((o, j) => {
+            const letter = String.fromCharCode(65 + j);
+            const picked = (a === o.text || a === letter || a === (j + 1));
+            return `<span class="ans-opt${picked ? " picked" : ""}">${letter}. ${escHtml(o.text)}</span>`;
+          }).join("")}</div>`;
+        } else {
+          optsHtml = `<div class="ans-opts"><span class="ans-opt picked">${escHtml(String(a))}</span></div>`;
+        }
+        return `<div class="ans-item">
+          <div class="ans-item-head"><b>Q${i + 1}</b> ${qText}</div>
+          <div class="ans-item-body">${optsHtml}</div>
+        </div>`;
+      }).join("");
+    }
+
+    function escHtml(s) {
+      const d = document.createElement("div"); d.textContent = s; return d.innerHTML;
     }
 
     async function load() {
